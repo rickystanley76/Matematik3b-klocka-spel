@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Clock Matching Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .setup {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .card {
+            height: 100px;
+            background-color: #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .card.flipped {
+            background-color: #bbdefb;
+        }
+        
+        .card.matched {
+            background-color: #c8e6c9;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        #win-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .win-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Clock Matching Game</h1>
+        
+        <div class="setup">
+            <label for="pairs">Pairs:</label>
+            <input type="number" id="pairs" min="2" max="8" value="4">
+            <button id="start-btn">Start Game</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+        
+        <div class="stats">
+            <div>Moves: <span id="moves">0</span></div>
+            <div>Time: <span id="time">00:00</span></div>
+        </div>
+        
+        <div id="game-board" class="game-board"></div>
+    </div>
+    
+    <div id="win-message">
+        <div class="win-content">
+            <h2>Congratulations!</h2>
+            <p>You've matched all the clocks!</p>
+            <p>Time: <span id="final-time">00:00</span></p>
+            <p>Moves: <span id="final-moves">0</span></p>
+            <button id="play-again">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const playAgainBtn = document.getElementById('play-again');
+            const pairsInput = document.getElementById('pairs');
+            const gameBoard = document.getElementById('game-board');
+            const movesElement = document.getElementById('moves');
+            const timeElement = document.getElementById('time');
+            const finalTimeElement = document.getElementById('final-time');
+            const finalMovesElement = document.getElementById('final-moves');
+            const winMessage = document.getElementById('win-message');
+            
+            // Game state
+            let cards = [];
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let totalPairs = 4;
+            let moves = 0;
+            let timer = null;
+            let seconds = 0;
+            let gameStarted = false;
+            
+            // Clock times
+            const clockTimes = [
+                "1:00", "2:00", "3:00", "4:00", "5:00", "6:00", 
+                "7:00", "8:00", "9:00", "10:00", "11:00", "12:00"
+            ];
+            
+            // Event listeners
+            startBtn.addEventListener('click', startGame);
+            resetBtn.addEventListener('click', resetGame);
+            playAgainBtn.addEventListener('click', resetGame);
+            
+            // Start game
+            function startGame() {
+                totalPairs = parseInt(pairsInput.value);
+                if (isNaN(totalPairs) || totalPairs < 2 || totalPairs > 8) {
+                    alert('Please enter a number between 2 and 8');
+                    return;
+                }
+                
+                resetGame();
+                createGameBoard();
+                startTimer();
+                gameStarted = true;
+            }
+            
+            // Reset game
+            function resetGame() {
+                stopTimer();
+                gameBoard.innerHTML = '';
+                flippedCards = [];
+                matchedPairs = 0;
+                moves = 0;
+                seconds = 0;
+                gameStarted = false;
+                updateMoves();
+                updateTimer();
+                winMessage.style.display = 'none';
+            }
+            
+            // Create game board
+            function createGameBoard() {
+                // Select and shuffle clock times
+                const shuffledTimes = [...clockTimes]
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, totalPairs);
+                
+                // Create pairs
+                cards = [];
+                shuffledTimes.forEach(time => {
+                    // Add each time twice (for pairs)
+                    cards.push({ time, type: 'image' });
+                    cards.push({ time, type: 'text' });
+                });
+                
+                // Shuffle cards
+                cards = shuffleArray(cards);
+                
+                // Set grid columns
+                const columns = totalPairs <= 4 ? 4 : 6;
+                gameBoard.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+                
+                // Create card elements
+                cards.forEach((card, index) => {
+                    const cardElement = document.createElement('div');
+                    cardElement.classList.add('card');
+                    cardElement.dataset.index = index;
+                    
+                    // Add click event
+                    cardElement.addEventListener('click', () => flipCard(index));
+                    
+                    gameBoard.appendChild(cardElement);
+                });
+            }
+            
+            // Flip card
+            function flipCard(index) {
+                if (!gameStarted) return;
+                
+                const cardElement = document.querySelector(`.card[data-index="${index}"]`);
+                
+                // Check if card is already flipped or matched
+                if (flippedCards.includes(index) || cardElement.classList.contains('matched')) {
+                    return;
+                }
+                
+                // Flip the card
+                cardElement.classList.add('flipped');
+                cardElement.textContent = cards[index].time;
+                flippedCards.push(index);
+                
+                // Check if two cards are flipped
+                if (flippedCards.length === 2) {
+                    moves++;
+                    updateMoves();
+                    
+                    const firstCardIndex = flippedCards[0];
+                    const secondCardIndex = flippedCards[1];
+                    
+                    // Check if cards match
+                    if (cards[firstCardIndex].time === cards[secondCardIndex].time) {
+                        // Cards match
+                        setTimeout(() => {
+                            document.querySelector(`.card[data-index="${firstCardIndex}"]`).classList.add('matched');
+                            document.querySelector(`.card[data-index="${secondCardIndex}"]`).classList.add('matched');
+                            flippedCards = [];
+                            matchedPairs++;
+                            
+                            // Check if all pairs are matched
+                            if (matchedPairs === totalPairs) {
+                                gameWon();
+                            }
+                        }, 500);
+                    } else {
+                        // Cards don't match
+                        setTimeout(() => {
+                            document.querySelector(`.card[data-index="${firstCardIndex}"]`).classList.remove('flipped');
+                            document.querySelector(`.card[data-index="${firstCardIndex}"]`).textContent = '';
+                            document.querySelector(`.card[data-index="${secondCardIndex}"]`).classList.remove('flipped');
+                            document.querySelector(`.card[data-index="${secondCardIndex}"]`).textContent = '';
+                            flippedCards = [];
+                        }, 1000);
+                    }
+                }
+            }
+            
+            // Game won
+            function gameWon() {
+                stopTimer();
+                finalTimeElement.textContent = timeElement.textContent;
+                finalMovesElement.textContent = moves;
+                setTimeout(() => {
+                    winMessage.style.display = 'flex';
+                }, 500);
+            }
+            
+            // Start timer
+            function startTimer() {
+                stopTimer();
+                seconds = 0;
+                updateTimer();
+                timer = setInterval(() => {
+                    seconds++;
+                    updateTimer();
+                }, 1000);
+            }
+            
+            // Stop timer
+            function stopTimer() {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            }
+            
+            // Update timer display
+            function updateTimer() {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Update moves display
+            function updateMoves() {
+                movesElement.textContent = moves;
+            }
+            
+            // Shuffle array
+            function shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
+        });
+    </script>
+</body>
+</html> 

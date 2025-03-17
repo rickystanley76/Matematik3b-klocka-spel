@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klockmatchningsverktyg</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 100%;
+            max-width: 1200px;
+            position: relative;
+            overflow: visible;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+        }
+        
+        .instructions {
+            background-color: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .instructions p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .instructions .highlight {
+            font-weight: bold;
+            color: #6e8efb;
+        }
+        
+        .setup-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 0 auto 30px;
+            max-width: 500px;
+        }
+        
+        label {
+            font-size: 1.2rem;
+            color: #555;
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        button {
+            background-color: #6e8efb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #5a7df7;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
+        }
+        
+        .game-container {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .column-header {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .item {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .item.selected {
+            border: 3px solid #6e8efb;
+        }
+        
+        .item.matched {
+            border: 3px solid #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
+            pointer-events: none;
+        }
+        
+        .clock-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            color: #333;
+            line-height: 1.4;
+            padding: 5px;
+        }
+        
+        .line {
+            position: absolute;
+            background-color: #6e8efb;
+            pointer-events: none;
+            opacity: 0.7;
+            z-index: 5;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+        }
+        
+        .timer, .score {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #444;
+        }
+        
+        #win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .win-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .win-content h2 {
+            color: #6e8efb;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .win-content p {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: #555;
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+            
+            .item {
+                min-height: 100px;
+            }
+            
+            .clock-text {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Klockmatchningsverktyg</h1>
+        
+        <div class="instructions">
+            <p>Matcha klockorna till vänster med rätt tidsbeskrivningar i text till höger.</p>
+            <p><span class="highlight">Hur man spelar:</span> Klicka först på en klocka, klicka sedan på den matchande textbeskrivningen. Om du ändrar dig kan du klicka på ett markerat objekt igen för att avmarkera det.</p>
+            <p><span class="highlight">Svårighetsnivåer:</span></p>
+            <ul style="text-align: left; margin: 10px 20px; list-style-type: disc;">
+                <li><strong>Nivå 1 (Enkel):</strong> Hela och halva timmar, t.ex. "Klockan är två" eller "Klockan är halv tre"</li>
+                <li><strong>Nivå 2 (Medel):</strong> Kvartar och 20/25-minutersintervaller, t.ex. "Klockan är kvart över fyra" eller "Klockan är tjugo i nio"</li>
+                <li><strong>Nivå 3 (Svår):</strong> Komplexa uttryck med före/efter, t.ex. "Om tio minuter är klockan halv sex" eller "För en kvart sedan var klockan två"</li>
+            </ul>
+            <p>Läs noga och tänk på vilken tid texten faktiskt beskriver!</p>
+        </div>
+        
+        <div class="setup-container">
+            <label for="pairs-count">Hur många matchande par vill du lösa?</label>
+            <input type="number" id="pairs-count" min="3" max="12" value="6">
+            
+            <label for="difficulty">Svårighetsnivå:</label>
+            <select id="difficulty">
+                <option value="1">Nivå 1 - Enkel (Hela och halva timmar)</option>
+                <option value="2">Nivå 2 - Medel (Kvartar och 20/25 minuter)</option>
+                <option value="3">Nivå 3 - Svår (Komplexa uttryck med före/efter)</option>
+                <option value="0">Blandad (Alla nivåer)</option>
+            </select>
+            
+            <button id="start-game">Starta spelet</button>
+        </div>
+        
+        <div class="stats">
+            <div class="timer">Tid: <span id="time">00:00</span></div>
+            <div class="score">Poäng: <span id="score">0</span> / <span id="total-pairs">0</span></div>
+            <button id="reset-game">Återställ spelet</button>
+        </div>
+        
+        <div class="game-container">
+            <div class="column" id="clock-column">
+                <div class="column-header">Klockor</div>
+                <!-- Clock items will be generated here -->
+            </div>
+            
+            <div class="column" id="text-column">
+                <div class="column-header">I text</div>
+                <!-- Text items will be generated here -->
+            </div>
+        </div>
+    </div>
+    
+    <div id="win-message">
+        <div class="win-content">
+            <h2>Grattis!</h2>
+            <p>Du har matchat alla klockor!</p>
+            <p>Tid: <span id="final-time">00:00</span></p>
+            <p>Poäng: <span id="final-score">0</span> / <span id="final-total">0</span></p>
+            <button id="play-again">Spela igen</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const startGameBtn = document.getElementById('start-game');
+            const resetGameBtn = document.getElementById('reset-game');
+            const playAgainBtn = document.getElementById('play-again');
+            const pairsCountInput = document.getElementById('pairs-count');
+            const difficultySelect = document.getElementById('difficulty');
+            const clockColumn = document.getElementById('clock-column');
+            const textColumn = document.getElementById('text-column');
+            const timeElement = document.getElementById('time');
+            const scoreElement = document.getElementById('score');
+            const totalPairsElement = document.getElementById('total-pairs');
+            const finalTimeElement = document.getElementById('final-time');
+            const finalScoreElement = document.getElementById('final-score');
+            const finalTotalElement = document.getElementById('final-total');
+            const winMessage = document.getElementById('win-message');
+            
+            // Game state variables
+            let clockItems = [];
+            let textItems = [];
+            let selectedClockItem = null;
+            let selectedTextItem = null;
+            let matchedPairs = 0;
+            let totalPairs = 6; // Default value
+            let timer = null;
+            let seconds = 0;
+            let gameStarted = false;
+            let lines = [];
+            let currentDifficulty = 1; // Default difficulty level
+            
+            // Clock times to use for the game with Swedish translations - with varying difficulty levels
+            const clockTimes = [
+                // Basic times (Level 1)
+                { time: "1:00", hour: 1, minute: 0, swedish: "Klockan är ett på morgonen", level: 1 },
+                { time: "2:00", hour: 2, minute: 0, swedish: "Klockan är två", level: 1 },
+                { time: "3:00", hour: 3, minute: 0, swedish: "Klockan är tre på eftermiddagen", level: 1 },
+                { time: "4:00", hour: 4, minute: 0, swedish: "Klockan visar fyra just nu", level: 1 },
+                { time: "5:00", hour: 5, minute: 0, swedish: "Klockan är fem på eftermiddagen", level: 1 },
+                { time: "6:00", hour: 6, minute: 0, swedish: "Klockan är sex på morgonen", level: 1 },
+                { time: "7:00", hour: 7, minute: 0, swedish: "Klockan är sju", level: 1 },
+                { time: "8:00", hour: 8, minute: 0, swedish: "Klockan är åtta på morgonen", level: 1 },
+                { time: "9:00", hour: 9, minute: 0, swedish: "Klockan är nio", level: 1 },
+                { time: "10:00", hour: 10, minute: 0, swedish: "Klockan är tio på förmiddagen", level: 1 },
+                { time: "11:00", hour: 11, minute: 0, swedish: "Klockan är elva", level: 1 },
+                { time: "12:00", hour: 12, minute: 0, swedish: "Klockan är tolv på dagen", level: 1 },
+                
+                // Half hours (Level 1)
+                { time: "1:30", hour: 1, minute: 30, swedish: "Klockan är halv två", level: 1 },
+                { time: "2:30", hour: 2, minute: 30, swedish: "Klockan är halv tre", level: 1 },
+                { time: "3:30", hour: 3, minute: 30, swedish: "Klockan är halv fyra", level: 1 },
+                { time: "4:30", hour: 4, minute: 30, swedish: "Klockan är halv fem", level: 1 },
+                { time: "5:30", hour: 5, minute: 30, swedish: "Klockan är halv sex", level: 1 },
+                { time: "6:30", hour: 6, minute: 30, swedish: "Klockan är halv sju", level: 1 },
+                { time: "7:30", hour: 7, minute: 30, swedish: "Klockan är halv åtta", level: 1 },
+                { time: "8:30", hour: 8, minute: 30, swedish: "Klockan är halv nio", level: 1 },
+                { time: "9:30", hour: 9, minute: 30, swedish: "Klockan är halv tio", level: 1 },
+                { time: "10:30", hour: 10, minute: 30, swedish: "Klockan är halv elva", level: 1 },
+                { time: "11:30", hour: 11, minute: 30, swedish: "Klockan är halv tolv", level: 1 },
+                { time: "12:30", hour: 12, minute: 30, swedish: "Klockan är halv ett", level: 1 },
+                
+                // Quarter hours (Level 2)
+                { time: "1:15", hour: 1, minute: 15, swedish: "Klockan är kvart över ett", level: 2 },
+                { time: "2:15", hour: 2, minute: 15, swedish: "Klockan är kvart över två", level: 2 },
+                { time: "3:15", hour: 3, minute: 15, swedish: "Klockan är kvart över tre", level: 2 },
+                { time: "4:15", hour: 4, minute: 15, swedish: "Klockan är kvart över fyra", level: 2 },
+                { time: "5:15", hour: 5, minute: 15, swedish: "Klockan är kvart över fem", level: 2 },
+                { time: "6:15", hour: 6, minute: 15, swedish: "Klockan är kvart över sex", level: 2 },
+                { time: "7:45", hour: 7, minute: 45, swedish: "Klockan är kvart i åtta", level: 2 },
+                { time: "8:45", hour: 8, minute: 45, swedish: "Klockan är kvart i nio", level: 2 },
+                { time: "9:45", hour: 9, minute: 45, swedish: "Klockan är kvart i tio", level: 2 },
+                { time: "10:45", hour: 10, minute: 45, swedish: "Klockan är kvart i elva", level: 2 },
+                { time: "11:45", hour: 11, minute: 45, swedish: "Klockan är kvart i tolv", level: 2 },
+                { time: "12:45", hour: 12, minute: 45, swedish: "Klockan är kvart i ett", level: 2 },
+                
+                // 20 and 25 minute intervals (Level 2)
+                { time: "3:20", hour: 3, minute: 20, swedish: "Klockan är tjugo minuter över tre", level: 2 },
+                { time: "4:20", hour: 4, minute: 20, swedish: "Klockan är tjugo över fyra", level: 2 },
+                { time: "5:25", hour: 5, minute: 25, swedish: "Klockan är tjugofem minuter över fem", level: 2 },
+                { time: "6:25", hour: 6, minute: 25, swedish: "Klockan är tjugofem över sex", level: 2 },
+                { time: "7:40", hour: 7, minute: 40, swedish: "Klockan är tjugo minuter i åtta", level: 2 },
+                { time: "8:40", hour: 8, minute: 40, swedish: "Klockan är tjugo i nio", level: 2 },
+                { time: "9:35", hour: 9, minute: 35, swedish: "Klockan är tjugofem minuter i tio", level: 2 },
+                { time: "10:35", hour: 10, minute: 35, swedish: "Klockan är tjugofem i elva", level: 2 },
+                
+                // Complex expressions with before/after (Level 3)
+                { time: "2:00", hour: 2, minute: 0, swedish: "Om tio minuter är klockan tio minuter över två", level: 3 },
+                { time: "3:00", hour: 3, minute: 0, swedish: "För en timme sedan var klockan två", level: 3 },
+                { time: "4:00", hour: 4, minute: 0, swedish: "Om en kvart är klockan kvart över fyra", level: 3 },
+                { time: "5:00", hour: 5, minute: 0, swedish: "Om en halvtimme är klockan halv sex", level: 3 },
+                { time: "7:00", hour: 7, minute: 0, swedish: "Väckarklockan ringer klockan sju", level: 3 },
+                { time: "8:00", hour: 8, minute: 0, swedish: "Skolan börjar klockan åtta", level: 3 },
+                { time: "9:00", hour: 9, minute: 0, swedish: "Mötet startar klockan nio", level: 3 },
+                { time: "11:00", hour: 11, minute: 0, swedish: "En timme före lunch är klockan elva", level: 3 },
+                { time: "12:00", hour: 12, minute: 0, swedish: "Klockan är tolv, dags för lunch", level: 3 },
+                { time: "1:30", hour: 1, minute: 30, swedish: "Trettio minuter efter ett är klockan halv två", level: 3 },
+                { time: "4:30", hour: 4, minute: 30, swedish: "Trettio minuter före fem är klockan halv fem", level: 3 },
+                { time: "5:30", hour: 5, minute: 30, swedish: "Middagen serveras halv sex", level: 3 },
+                { time: "6:30", hour: 6, minute: 30, swedish: "Bussen avgår klockan halv sju", level: 3 },
+                { time: "7:30", hour: 7, minute: 30, swedish: "Filmen börjar klockan halv åtta", level: 3 },
+                { time: "8:30", hour: 8, minute: 30, swedish: "Biblioteket stänger halv nio", level: 3 },
+                { time: "10:30", hour: 10, minute: 30, swedish: "Trettio minuter efter tio är klockan halv elva", level: 3 },
+                { time: "11:30", hour: 11, minute: 30, swedish: "Om trettio minuter är klockan tolv", level: 3 },
+                
+                // Very complex expressions (Level 3)
+                { time: "2:15", hour: 2, minute: 15, swedish: "För en kvart sedan var klockan två", level: 3 },
+                { time: "3:45", hour: 3, minute: 45, swedish: "Om en kvart är klockan fyra", level: 3 },
+                { time: "5:20", hour: 5, minute: 20, swedish: "Om tio minuter är klockan halv sex", level: 3 },
+                { time: "6:40", hour: 6, minute: 40, swedish: "För tio minuter sedan var klockan halv sju", level: 3 },
+                { time: "9:25", hour: 9, minute: 25, swedish: "Om fem minuter är klockan halv tio", level: 3 },
+                { time: "10:35", hour: 10, minute: 35, swedish: "För fem minuter sedan var klockan halv elva", level: 3 }
+            ];
+            
+            // Event listeners
+            startGameBtn.addEventListener('click', startGame);
+            resetGameBtn.addEventListener('click', resetGame);
+            playAgainBtn.addEventListener('click', resetGame);
+            
+            // Initialize the game
+            function startGame() {
+                totalPairs = parseInt(pairsCountInput.value);
+                
+                if (isNaN(totalPairs) || totalPairs < 3 || totalPairs > 12) {
+                    alert('Vänligen ange ett nummer mellan 3 och 12');
+                    return;
+                }
+                
+                resetGame();
+                if (createGameBoard()) {
+                    startTimer();
+                    gameStarted = true;
+                    
+                    // Update total pairs display
+                    totalPairsElement.textContent = totalPairs;
+                    finalTotalElement.textContent = totalPairs;
+                    
+                    // Initialize the game board layout
+                    setTimeout(updateLines, 100);
+                }
+            }
+            
+            // Reset the game
+            function resetGame() {
+                stopTimer();
+                // Clear the columns but keep the headers
+                const clockHeader = clockColumn.querySelector('.column-header');
+                const textHeader = textColumn.querySelector('.column-header');
+                
+                clockColumn.innerHTML = '';
+                textColumn.innerHTML = '';
+                
+                if (clockHeader) clockColumn.appendChild(clockHeader);
+                if (textHeader) textColumn.appendChild(textHeader);
+                
+                removeAllLines();
+                clockItems = [];
+                textItems = [];
+                selectedClockItem = null;
+                selectedTextItem = null;
+                matchedPairs = 0;
+                seconds = 0;
+                gameStarted = false;
+                updateTimer();
+                updateScore();
+                winMessage.style.display = 'none';
+            }
+            
+            // Create the game board
+            function createGameBoard() {
+                // Get the selected difficulty level
+                currentDifficulty = parseInt(difficultySelect.value);
+                
+                // Filter clock times by difficulty level
+                let availableTimes = [...clockTimes];
+                if (currentDifficulty > 0) {
+                    availableTimes = clockTimes.filter(time => time.level <= currentDifficulty);
+                }
+                
+                // Make sure we have enough times for the selected number of pairs
+                if (availableTimes.length < totalPairs) {
+                    alert(`Det finns inte tillräckligt med tider för den valda svårighetsnivån och antalet par. Minska antalet par eller välj en högre svårighetsnivå.`);
+                    return false;
+                }
+                
+                // Shuffle and select the required number of clock times
+                const shuffledTimes = availableTimes.sort(() => 0.5 - Math.random()).slice(0, totalPairs);
+                
+                // Create clock items
+                clockItems = shuffledTimes.map((clockTime, index) => {
+                    return {
+                        id: `clock-${index}`,
+                        time: clockTime.time,
+                        hour: clockTime.hour,
+                        minute: clockTime.minute,
+                        swedish: clockTime.swedish,
+                        matched: false,
+                        level: clockTime.level
+                    };
+                });
+                
+                // Create text items (copy of clock items)
+                textItems = clockItems.map((item, index) => {
+                    return {
+                        id: `text-${index}`,
+                        time: item.time,
+                        swedish: item.swedish,
+                        matched: false
+                    };
+                });
+                
+                // Shuffle both arrays
+                clockItems = shuffleArray(clockItems);
+                textItems = shuffleArray(textItems);
+                
+                // Create clock elements
+                clockItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.classList.add('item');
+                    itemElement.dataset.id = item.id;
+                    itemElement.appendChild(createClockImage(item.hour, item.minute));
+                    
+                    itemElement.addEventListener('click', () => selectClockItem(item.id));
+                    clockColumn.appendChild(itemElement);
+                });
+                
+                // Create text elements with Swedish time
+                textItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.classList.add('item');
+                    itemElement.dataset.id = item.id;
+                    
+                    const textElement = document.createElement('div');
+                    textElement.classList.add('clock-text');
+                    textElement.textContent = item.swedish;
+                    
+                    itemElement.appendChild(textElement);
+                    itemElement.addEventListener('click', () => selectTextItem(item.id));
+                    textColumn.appendChild(itemElement);
+                });
+                
+                return true;
+            }
+            
+            // Create SVG clock image
+            function createClockImage(hour, minute) {
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "100");
+                svg.setAttribute("height", "100");
+                svg.setAttribute("viewBox", "0 0 100 100");
+                
+                // Clock face
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", "50");
+                circle.setAttribute("cy", "50");
+                circle.setAttribute("r", "45");
+                circle.setAttribute("fill", "white");
+                circle.setAttribute("stroke", "#333");
+                circle.setAttribute("stroke-width", "2");
+                svg.appendChild(circle);
+                
+                // Hour markers
+                for (let i = 0; i < 12; i++) {
+                    const marker = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    const angle = i * 30 * Math.PI / 180;
+                    const x1 = 50 + 38 * Math.sin(angle);
+                    const y1 = 50 - 38 * Math.cos(angle);
+                    const x2 = 50 + 42 * Math.sin(angle);
+                    const y2 = 50 - 42 * Math.cos(angle);
+                    
+                    marker.setAttribute("x1", x1);
+                    marker.setAttribute("y1", y1);
+                    marker.setAttribute("x2", x2);
+                    marker.setAttribute("y2", y2);
+                    marker.setAttribute("stroke", "#333");
+                    marker.setAttribute("stroke-width", "2");
+                    svg.appendChild(marker);
+                    
+                    // Add hour numbers
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    const hourNum = i === 0 ? 12 : i;
+                    const textX = 50 + 32 * Math.sin(angle);
+                    const textY = 50 - 32 * Math.cos(angle);
+                    
+                    text.setAttribute("x", textX);
+                    text.setAttribute("y", textY);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("font-size", "10");
+                    text.setAttribute("font-weight", "bold");
+                    text.setAttribute("fill", "#333");
+                    text.textContent = hourNum;
+                    svg.appendChild(text);
+                }
+                
+                // Hour hand
+                const hourAngle = ((hour % 12) * 30 + minute * 0.5) * Math.PI / 180;
+                const hourHand = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                hourHand.setAttribute("x1", "50");
+                hourHand.setAttribute("y1", "50");
+                hourHand.setAttribute("x2", 50 + 25 * Math.sin(hourAngle));
+                hourHand.setAttribute("y2", 50 - 25 * Math.cos(hourAngle));
+                hourHand.setAttribute("stroke", "#333");
+                hourHand.setAttribute("stroke-width", "4");
+                hourHand.setAttribute("stroke-linecap", "round");
+                svg.appendChild(hourHand);
+                
+                // Minute hand
+                const minuteAngle = minute * 6 * Math.PI / 180;
+                const minuteHand = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                minuteHand.setAttribute("x1", "50");
+                minuteHand.setAttribute("y1", "50");
+                minuteHand.setAttribute("x2", 50 + 35 * Math.sin(minuteAngle));
+                minuteHand.setAttribute("y2", 50 - 35 * Math.cos(minuteAngle));
+                minuteHand.setAttribute("stroke", "#333");
+                minuteHand.setAttribute("stroke-width", "2");
+                minuteHand.setAttribute("stroke-linecap", "round");
+                svg.appendChild(minuteHand);
+                
+                // Center dot
+                const centerDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                centerDot.setAttribute("cx", "50");
+                centerDot.setAttribute("cy", "50");
+                centerDot.setAttribute("r", "3");
+                centerDot.setAttribute("fill", "#333");
+                svg.appendChild(centerDot);
+                
+                return svg;
+            }
+            
+            // Select a clock item
+            function selectClockItem(id) {
+                if (!gameStarted) return;
+                
+                // If this item is already matched, do nothing
+                const clockItem = clockItems.find(item => item.id === id);
+                if (clockItem.matched) return;
+                
+                // If this item is already selected, unselect it
+                if (selectedClockItem === id) {
+                    document.querySelector(`.item[data-id="${selectedClockItem}"]`).classList.remove('selected');
+                    selectedClockItem = null;
+                    return;
+                }
+                
+                // Deselect previously selected clock item
+                if (selectedClockItem) {
+                    document.querySelector(`.item[data-id="${selectedClockItem}"]`).classList.remove('selected');
+                }
+                
+                // Select this clock item
+                selectedClockItem = id;
+                document.querySelector(`.item[data-id="${id}"]`).classList.add('selected');
+                
+                // Check if we have both selections
+                checkForMatch();
+            }
+            
+            // Select a text item
+            function selectTextItem(id) {
+                if (!gameStarted) return;
+                
+                // If this item is already matched, do nothing
+                const textItem = textItems.find(item => item.id === id);
+                if (textItem.matched) return;
+                
+                // If this item is already selected, unselect it
+                if (selectedTextItem === id) {
+                    document.querySelector(`.item[data-id="${selectedTextItem}"]`).classList.remove('selected');
+                    selectedTextItem = null;
+                    return;
+                }
+                
+                // Deselect previously selected text item
+                if (selectedTextItem) {
+                    document.querySelector(`.item[data-id="${selectedTextItem}"]`).classList.remove('selected');
+                }
+                
+                // Select this text item
+                selectedTextItem = id;
+                document.querySelector(`.item[data-id="${id}"]`).classList.add('selected');
+                
+                // Check if we have both selections
+                checkForMatch();
+            }
+            
+            // Check if selected items match
+            function checkForMatch() {
+                if (!selectedClockItem || !selectedTextItem) return;
+                
+                const clockItem = clockItems.find(item => item.id === selectedClockItem);
+                const textItem = textItems.find(item => item.id === selectedTextItem);
+                
+                if (clockItem.time === textItem.time) {
+                    // Items match
+                    const clockElement = document.querySelector(`.item[data-id="${selectedClockItem}"]`);
+                    const textElement = document.querySelector(`.item[data-id="${selectedTextItem}"]`);
+                    
+                    if (!clockElement || !textElement) return;
+                    
+                    clockElement.classList.remove('selected');
+                    textElement.classList.remove('selected');
+                    
+                    clockElement.classList.add('matched');
+                    textElement.classList.add('matched');
+                    
+                    // Mark items as matched
+                    clockItem.matched = true;
+                    textItem.matched = true;
+                    
+                    // Increment matched pairs
+                    matchedPairs++;
+                    updateScore();
+                    
+                    // Draw a line connecting the matched items
+                    setTimeout(() => {
+                        drawLine(clockElement, textElement);
+                    }, 50);
+                    
+                    // Check if all pairs are matched
+                    if (matchedPairs === totalPairs) {
+                        gameWon();
+                    }
+                } else {
+                    // Items don't match - deselect after a short delay
+                    setTimeout(() => {
+                        const clockElement = document.querySelector(`.item[data-id="${selectedClockItem}"]`);
+                        const textElement = document.querySelector(`.item[data-id="${selectedTextItem}"]`);
+                        
+                        if (clockElement) clockElement.classList.remove('selected');
+                        if (textElement) textElement.classList.remove('selected');
+                    }, 500);
+                }
+                
+                // Reset selections after a delay to prevent rapid clicking issues
+                setTimeout(() => {
+                    selectedClockItem = null;
+                    selectedTextItem = null;
+                }, 510);
+            }
+            
+            // Draw a line connecting matched items
+            function drawLine(element1, element2) {
+                // Get the container's position
+                const containerRect = document.querySelector('.container').getBoundingClientRect();
+                
+                // Get the positions of the elements relative to the viewport
+                const rect1 = element1.getBoundingClientRect();
+                const rect2 = element2.getBoundingClientRect();
+                
+                // Calculate the center points of each element relative to the container
+                const x1 = rect1.left + rect1.width / 2 - containerRect.left;
+                const y1 = rect1.top + rect1.height / 2 - containerRect.top;
+                const x2 = rect2.left + rect2.width / 2 - containerRect.left;
+                const y2 = rect2.top + rect2.height / 2 - containerRect.top;
+                
+                // Calculate the length and angle of the line
+                const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                
+                // Create the line element
+                const line = document.createElement('div');
+                line.classList.add('line');
+                line.style.width = `${length}px`;
+                line.style.height = '3px';
+                line.style.position = 'absolute';
+                line.style.top = `${y1}px`;
+                line.style.left = `${x1}px`;
+                line.style.transformOrigin = '0 0';
+                line.style.transform = `rotate(${angle}deg)`;
+                line.style.zIndex = '5'; // Ensure lines are below the items
+                
+                // Add the line to the container
+                document.querySelector('.container').appendChild(line);
+                lines.push(line);
+            }
+            
+            // Remove all connecting lines
+            function removeAllLines() {
+                lines.forEach(line => {
+                    if (line.parentNode) {
+                        line.parentNode.removeChild(line);
+                    }
+                });
+                lines = [];
+            }
+            
+            // Game won
+            function gameWon() {
+                stopTimer();
+                finalTimeElement.textContent = timeElement.textContent;
+                finalScoreElement.textContent = matchedPairs;
+                setTimeout(() => {
+                    winMessage.style.display = 'flex';
+                }, 500);
+            }
+            
+            // Start the timer
+            function startTimer() {
+                stopTimer();
+                seconds = 0;
+                updateTimer();
+                timer = setInterval(() => {
+                    seconds++;
+                    updateTimer();
+                }, 1000);
+            }
+            
+            // Stop the timer
+            function stopTimer() {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            }
+            
+            // Update the timer display
+            function updateTimer() {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Update the score display
+            function updateScore() {
+                scoreElement.textContent = matchedPairs;
+            }
+            
+            // Shuffle array (Fisher-Yates algorithm)
+            function shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
+            
+            // Handle window resize and scroll to update lines
+            window.addEventListener('resize', updateLines);
+            window.addEventListener('scroll', updateLines);
+            
+            // Function to update all lines
+            function updateLines() {
+                if (gameStarted) {
+                    removeAllLines();
+                    
+                    // Use setTimeout to ensure the DOM has updated before redrawing lines
+                    setTimeout(() => {
+                        // Redraw lines for matched pairs
+                        clockItems.forEach((clockItem) => {
+                            if (clockItem.matched) {
+                                const matchedTextItem = textItems.find(item => item.time === clockItem.time && item.matched);
+                                if (matchedTextItem) {
+                                    const clockElement = document.querySelector(`.item[data-id="${clockItem.id}"]`);
+                                    const textElement = document.querySelector(`.item[data-id="${matchedTextItem.id}"]`);
+                                    if (clockElement && textElement) {
+                                        drawLine(clockElement, textElement);
+                                    }
+                                }
+                            }
+                        });
+                    }, 50);
+                }
+            }
+            
+            // Set up a MutationObserver to monitor DOM changes and update lines
+            const gameContainer = document.querySelector('.game-container');
+            const observer = new MutationObserver(function(mutations) {
+                updateLines();
+            });
+            
+            observer.observe(gameContainer, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class']
+            });
+            
+            // Initialize the game when the page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                // Force a redraw of the game container to ensure proper layout
+                gameContainer.style.display = 'none';
+                setTimeout(() => {
+                    gameContainer.style.display = 'flex';
+                }, 10);
+            });
+        });
+    </script>
+</body>
+</html> 
